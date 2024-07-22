@@ -1,25 +1,21 @@
 import User from "../models/user.models.js";
 import bcryptjs from "bcryptjs"
 import jwt from "jsonwebtoken"
+import { errorHandler } from "../utils/error.js" 
 
-export const signup = async(req,res) => {
+export const signup = async(req,res,next) => {
     const {username, email, password, confirmPassword, gender} = req.body
 
-    let validUser;
+    let doesUserAlreadyExists;
     
-    validUser = await User.findOne({email})
+    doesUserAlreadyExists = await User.findOne({email})
 
-    if(validUser){
-        return res.status(400).json({
-            success: false,
-            message: "Provided email already exists"
-        })
+    if(doesUserAlreadyExists){
+        return next(errorHandler(400,"User already exists"))
     }
 
     if(password !== confirmPassword){
-        return res.status(400).json({
-            error: "Passwords didn't match"
-        })
+        return next(errorHandler(400,"Passwords didn't match"))
     }
 
     const hashedPassword = bcryptjs.hashSync(password,10)
@@ -50,10 +46,7 @@ export const signup = async(req,res) => {
         })
     }
     catch(error){
-        console.log("Error",error)
-        res.status(500).json({
-            error: "Internal server error"
-        })
+        next(error)
     }
 }
 
